@@ -111,7 +111,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF6F0] text-[#241812] selection:bg-[#DE6828]/20 selection:text-[#B54C14]">
-      {/* Interactive Custom Follower Cursor */}
+      {/* Clean Custom Cursor: inner dot follows immediately, outer circle lags smoothly with no blur */}
       <CustomCursor />
 
       {/* Entry Screen Overlay */}

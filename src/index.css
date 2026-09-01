@@ -19,6 +19,11 @@
   h1, h2, h3, .font-serif, .font-editorial {
     font-family: 'Newsreader', Georgia, serif;
   }
+
+  /* Custom cursor enabled */
+  html, body, button, a, input, [role="button"] {
+    cursor: none !important;
+  }
 }
 
 /* Custom subtle animations */
