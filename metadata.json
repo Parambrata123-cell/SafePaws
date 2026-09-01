@@ -1,0 +1,6 @@
+{
+  "name": "SafePaws",
+  "description": "A community-powered safety net for pets. Create a trusted profile, stay connected to your neighborhood, and help bring every lost companion home.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
