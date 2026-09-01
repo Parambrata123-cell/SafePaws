@@ -85,20 +85,20 @@ export const CustomCursor: React.FC = () => {
           WebkitBackdropFilter: 'none',
         }}
         animate={{
-          scale: isMouseDown ? 0.8 : isPointer ? 1.4 : (isOverText || isOverNav) ? 1.15 : 1,
+          scale: isMouseDown ? 0.8 : isPointer ? 1.45 : (isOverText || isOverNav) ? 1.15 : 1,
           borderColor: isPointer
-            ? '#DE6828'
+            ? '#C84E0C'
             : (isOverText || isOverNav)
-            ? 'rgba(38, 23, 14, 0.4)'
-            : 'rgba(38, 23, 14, 0.3)',
+            ? 'rgba(238, 140, 78, 0.55)'
+            : 'rgba(244, 162, 97, 0.45)',
           backgroundColor: isPointer
-            ? 'rgba(222, 104, 40, 0.08)'
+            ? 'rgba(200, 78, 12, 0.15)'
             : (isOverText || isOverNav)
             ? 'transparent'
-            : 'rgba(250, 246, 240, 0.08)',
+            : 'rgba(244, 162, 97, 0.08)',
         }}
         transition={{ duration: 0.18, ease: 'easeOut' }}
-        className="fixed top-0 left-0 w-9 h-9 rounded-full border shadow-[0_0_10px_rgba(222,104,40,0.03)] pointer-events-none"
+        className="fixed top-0 left-0 w-9 h-9 rounded-full border shadow-[0_0_12px_rgba(244,162,97,0.15)] pointer-events-none"
       />
 
       {/* 2. Inner Dot / Ball: Real-time immediate mouse tracking */}
@@ -110,11 +110,11 @@ export const CustomCursor: React.FC = () => {
           translateY: '-50%',
         }}
         animate={{
-          scale: isMouseDown ? 0.6 : isPointer ? 1.25 : (isOverText || isOverNav) ? 0.9 : 1,
-          backgroundColor: isPointer ? '#DE6828' : (isOverText || isOverNav) ? '#3A281E' : '#27170E',
+          scale: isMouseDown ? 0.6 : isPointer ? 1.3 : (isOverText || isOverNav) ? 0.95 : 1,
+          backgroundColor: isPointer ? '#C84E0C' : '#F49E5D',
         }}
         transition={{ duration: 0.12 }}
-        className="fixed top-0 left-0 w-2.5 h-2.5 rounded-full bg-[#27170E] shadow-[0_1px_3px_rgba(0,0,0,0.2)] pointer-events-none"
+        className="fixed top-0 left-0 w-2.5 h-2.5 rounded-full bg-[#F49E5D] shadow-[0_1px_4px_rgba(200,78,12,0.25)] pointer-events-none"
       />
     </div>
   );

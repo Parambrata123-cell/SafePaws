@@ -4,7 +4,9 @@
  */
 
 import React, { useState } from 'react';
+import { AnimatePresence } from 'motion/react';
 import { CustomCursor } from './components/CustomCursor';
+import { EnterScreen } from './components/EnterScreen';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { FeaturesSection } from './components/FeaturesSection';
@@ -26,6 +28,7 @@ import { initialPets, sampleAlerts, sampleSightings } from './data/mockData';
 import { Pet, NeighborhoodAlert, CommunitySighting } from './types';
 
 export default function App() {
+  const [hasEntered, setHasEntered] = useState(false);
   const [pets, setPets] = useState<Pet[]>(initialPets);
   const [selectedPetId, setSelectedPetId] = useState<string>('pet-olive');
   const [alerts, setAlerts] = useState<NeighborhoodAlert[]>(sampleAlerts);
@@ -110,6 +113,13 @@ export default function App() {
     <div className="min-h-screen flex flex-col bg-[#FAF6F0] text-[#241812] selection:bg-[#DE6828]/20 selection:text-[#B54C14]">
       {/* Interactive Custom Follower Cursor */}
       <CustomCursor />
+
+      {/* Entry Screen Overlay */}
+      <AnimatePresence>
+        {!hasEntered && (
+          <EnterScreen onEnter={() => setHasEntered(true)} />
+        )}
+      </AnimatePresence>
 
       {/* 1. Header Navigation */}
       <Header

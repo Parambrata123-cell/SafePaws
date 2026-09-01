@@ -118,30 +118,68 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Right Controls */}
           <div className="flex items-center gap-2.5">
-            {/* Quick Alert Bell button with glass shine */}
-            <button
+            {/* Quick Alert Bell button with glass shine & gentle chime chime hover animation */}
+            <motion.button
               id="header-alert-bell-btn"
               onClick={onOpenAlerts}
               title="Neighborhood Lost Pet Radar"
-              className="relative p-2.5 rounded-xl text-[#3D2C22] bg-white/40 hover:bg-white/70 active:bg-white/90 backdrop-blur-md border border-white/70 shadow-[0_2px_8px_rgba(0,0,0,0.03),inset_0_1px_1px_rgba(255,255,255,0.9)] transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95"
+              whileHover="hover"
+              whileTap={{ scale: 0.92 }}
+              className="relative p-2.5 rounded-xl text-[#3D2C22] bg-white/40 hover:bg-white/85 active:bg-white/95 backdrop-blur-md border border-white/70 hover:border-white shadow-[0_2px_8px_rgba(0,0,0,0.03),inset_0_1px_1px_rgba(255,255,255,0.9)] hover:shadow-[0_4px_20px_rgba(222,104,40,0.18),inset_0_1px_2px_rgba(255,255,255,1)] transition-all duration-300 cursor-pointer group"
               aria-label="Lost Pet Alerts"
             >
-              <Bell className="w-4.5 h-4.5 text-[#3D2C22]" />
-              {activeAlertCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[#DE6828] rounded-full border-2 border-white shadow-sm" />
-              )}
-            </button>
+              {/* Dynamic light sheen reflection on hover */}
+              <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+                <div className="w-full h-full bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
+              </div>
 
-            {/* Profile Avatar Button with frosted acrylic finish */}
-            <button
+              {/* Animated Chime Bell Icon */}
+              <motion.div
+                variants={{
+                  hover: {
+                    rotate: [0, -14, 12, -8, 4, 0],
+                    transition: { duration: 0.55, ease: 'easeInOut' },
+                  },
+                }}
+                className="relative z-10 origin-top"
+              >
+                <Bell className="w-4.5 h-4.5 text-[#3D2C22] group-hover:text-[#DE6828] transition-colors duration-200" />
+              </motion.div>
+
+              {/* Notification Badge with glow enhancement on hover */}
+              {activeAlertCount > 0 && (
+                <motion.span
+                  variants={{
+                    hover: { scale: 1.25 },
+                  }}
+                  className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[#DE6828] group-hover:bg-[#E85514] rounded-full border-2 border-white shadow-[0_0_8px_rgba(222,104,40,0.6)] z-20 transition-colors"
+                />
+              )}
+            </motion.button>
+
+            {/* Profile Avatar Button with frosted acrylic finish & glowing glass lift */}
+            <motion.button
               id="header-profile-avatar-btn"
               onClick={onOpenProfile}
               title="My Pets & Profile"
-              className="w-10 h-10 rounded-xl bg-gradient-to-b from-[#E5D5C2]/80 to-[#E5D5C2]/40 hover:from-[#E5D5C2] hover:to-[#DAC7B0] backdrop-blur-md flex items-center justify-center text-[#423126] transition-all duration-200 hover:scale-105 active:scale-95 shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_1px_rgba(255,255,255,0.8)] cursor-pointer border border-white/70"
+              whileHover={{ scale: 1.06, y: -1 }}
+              whileTap={{ scale: 0.94 }}
+              className="relative w-10 h-10 rounded-xl bg-gradient-to-b from-[#EFE3D3]/90 to-[#E0CEB7]/70 hover:from-[#FAF2E8] hover:to-[#E8D9C5] backdrop-blur-md flex items-center justify-center text-[#423126] transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_1px_rgba(255,255,255,0.85)] hover:shadow-[0_6px_22px_rgba(38,23,14,0.12),inset_0_1px_2px_rgba(255,255,255,1)] hover:ring-2 hover:ring-[#DE6828]/25 cursor-pointer border border-white/70 hover:border-white group overflow-hidden"
               aria-label="User Profile"
             >
-              <User className="w-4.5 h-4.5 fill-[#3F2E23] text-[#3F2E23]" />
-            </button>
+              {/* Glass sheen flash on hover */}
+              <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+                <div className="w-full h-full bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
+              </div>
+
+              <motion.div
+                className="relative z-10"
+                whileHover={{ scale: 1.1 }}
+                transition={{ type: 'spring', stiffness: 350, damping: 20 }}
+              >
+                <User className="w-4.5 h-4.5 fill-[#3F2E23] text-[#3F2E23] group-hover:fill-[#DE6828] group-hover:text-[#DE6828] transition-colors duration-200" />
+              </motion.div>
+            </motion.button>
           </div>
         </div>
       </div>
