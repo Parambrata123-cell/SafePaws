@@ -71,22 +71,24 @@ export const CustomCursor: React.FC = () => {
       // Natural paw stride spacing: spawn every ~36-42px of movement
       const MIN_STRIDE = 38;
       if (dist >= MIN_STRIDE && (now - last.time) > 45) {
-        // Calculate movement direction in degrees (standard paw icon points upward at 0 deg)
-        // Math.atan2 gives angle from positive X axis (+90deg turns it to align with SVG pointing up)
+        // Calculate movement direction in degrees.
+        // In SVG coordinates, Y increases downward. Math.atan2(dy, dx) returns angle clockwise from +X axis (right).
+        // Since the paw SVG is drawn with the front toes pointing upward (-Y direction, i.e. -90 deg),
+        // adding +90 deg aligns the front toes exactly with the mouse movement vector (dx, dy).
         const angle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
 
         // Alternate slightly left and right paw footfalls for a natural animal stride
         const isRight = last.stepCount % 2 === 1;
-        const lateralOffset = 7; // pixels perpendicular to movement
-        const perpAngle = (Math.atan2(dy, dx) + (isRight ? Math.PI / 2 : -Math.PI / 2));
-        const spawnX = curX - (dx / dist) * 18 + Math.cos(perpAngle) * lateralOffset;
-        const spawnY = curY - (dy / dist) * 18 + Math.sin(perpAngle) * lateralOffset;
+        const lateralOffset = 6; // pixels perpendicular to movement
+        const perpAngle = Math.atan2(dy, dx) + (isRight ? Math.PI / 2 : -Math.PI / 2);
+        const spawnX = curX - (dx / dist) * 16 + Math.cos(perpAngle) * lateralOffset;
+        const spawnY = curY - (dy / dist) * 16 + Math.sin(perpAngle) * lateralOffset;
 
         const newStep: PawStep = {
           id: now,
           x: spawnX,
           y: spawnY,
-          angle: angle + (isRight ? 6 : -6), // subtle natural outward toe flare
+          angle: angle + (isRight ? 4 : -4), // subtle natural outward toe angle pointing forward
           side: isRight ? 'right' : 'left',
           scale: 0.9 + Math.random() * 0.15,
           opacity: 0.75,
