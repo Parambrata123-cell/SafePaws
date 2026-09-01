@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User, Bell, ShieldCheck } from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface HeaderProps {
   onOpenHowItWorks: () => void;
@@ -35,6 +36,14 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAlerts,
   activeAlertCount = 1,
 }) => {
+  const [hoveredNav, setHoveredNav] = useState<string | null>(null);
+
+  const navItems = [
+    { id: 'how-it-works', label: 'How it works', action: onOpenHowItWorks },
+    { id: 'community', label: 'Community', action: onOpenCommunity, hasBadge: true },
+    { id: 'features', label: 'Features', action: onOpenFeatures },
+  ];
+
   return (
     <header className="sticky top-0 z-40 w-full px-3 sm:px-6 lg:px-8 pt-3 pb-2 transition-all">
       {/* Outer floating realistic glass bar */}
@@ -54,35 +63,57 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
 
-          {/* Center Nav Links - Glass Pill */}
-          <nav className="hidden md:flex items-center gap-1 p-1 rounded-full bg-white/35 backdrop-blur-lg border border-white/60 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_2px_6px_rgba(0,0,0,0.02)] text-[14.5px] font-medium text-[#2E2018]">
-            <button
-              id="nav-how-it-works-btn"
-              onClick={onOpenHowItWorks}
-              className="px-4 py-1.5 rounded-full text-[#2E2018] hover:text-[#DE6828] hover:bg-white/60 active:bg-white/80 transition-all duration-200 cursor-pointer"
-            >
-              How it works
-            </button>
-            <button
-              id="nav-community-btn"
-              onClick={onOpenCommunity}
-              className="px-4 py-1.5 rounded-full text-[#2E2018] hover:text-[#DE6828] hover:bg-white/60 active:bg-white/80 transition-all duration-200 cursor-pointer flex items-center gap-2"
-            >
-              <span>Community</span>
-              {activeAlertCount > 0 && (
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#DE6828] opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#DE6828]" />
-                </span>
-              )}
-            </button>
-            <button
-              id="nav-features-btn"
-              onClick={onOpenFeatures}
-              className="px-4 py-1.5 rounded-full text-[#2E2018] hover:text-[#DE6828] hover:bg-white/60 active:bg-white/80 transition-all duration-200 cursor-pointer"
-            >
-              Features
-            </button>
+          {/* Center Nav Links - Glass Pill with Magnetic Hover Indicator */}
+          <nav
+            onMouseLeave={() => setHoveredNav(null)}
+            className="hidden md:flex items-center gap-1 p-1 rounded-full bg-white/40 backdrop-blur-xl border border-white/70 shadow-[inset_0_1px_2px_rgba(255,255,255,0.9),0_2px_8px_rgba(38,23,14,0.04)] text-[14.5px] font-medium"
+          >
+            {navItems.map((item) => {
+              const isHovered = hoveredNav === item.id;
+              return (
+                <button
+                  key={item.id}
+                  id={`nav-${item.id}-btn`}
+                  onClick={item.action}
+                  onMouseEnter={() => setHoveredNav(item.id)}
+                  className="relative px-4 py-1.5 rounded-full cursor-pointer transition-colors duration-200 select-none"
+                >
+                  {/* Sliding Glass Background Pill */}
+                  {isHovered && (
+                    <motion.div
+                      layoutId="nav-hover-pill"
+                      className="absolute inset-0 rounded-full bg-gradient-to-b from-white/95 to-white/75 backdrop-blur-md border border-white shadow-[0_4px_16px_rgba(222,104,40,0.12),inset_0_1px_1px_rgba(255,255,255,1)]"
+                      transition={{
+                        type: 'spring',
+                        stiffness: 420,
+                        damping: 32,
+                      }}
+                    />
+                  )}
+
+                  {/* Button Content */}
+                  <span
+                    className={`relative z-10 flex items-center gap-2 transition-all duration-200 ${
+                      isHovered
+                        ? 'text-[#DE6828] font-semibold translate-y-[-0.5px]'
+                        : 'text-[#2E2018]'
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    {item.hasBadge && activeAlertCount > 0 && (
+                      <span className="relative flex h-2 w-2">
+                        <span
+                          className={`absolute inline-flex h-full w-full rounded-full bg-[#DE6828] ${
+                            isHovered ? 'animate-ping opacity-90 scale-125' : 'animate-ping opacity-75'
+                          }`}
+                        />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#DE6828] shadow-[0_0_6px_rgba(222,104,40,0.8)]" />
+                      </span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
           </nav>
 
           {/* Right Controls */}
