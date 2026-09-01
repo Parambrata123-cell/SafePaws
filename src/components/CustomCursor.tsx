@@ -1,17 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, useMotionValue, useSpring, AnimatePresence } from 'motion/react';
 
 export type CursorMode = 'default' | 'button' | 'text' | 'card' | 'input' | 'image' | 'link';
-
-interface PawStep {
-  id: number;
-  x: number;
-  y: number;
-  angle: number; // degrees
-  side: 'left' | 'right';
-  scale: number;
-  opacity: number;
-}
 
 export const CustomCursor: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -19,96 +9,25 @@ export const CustomCursor: React.FC = () => {
   const [contextLabel, setContextLabel] = useState<string>('');
   const [isClicking, setIsClicking] = useState(false);
 
-  // Paw prints history
-  const [pawSteps, setPawSteps] = useState<PawStep[]>([]);
-  const lastPawRef = useRef<{ x: number; y: number; time: number; stepCount: number }>({
-    x: -999,
-    y: -999,
-    time: 0,
-    stepCount: 0,
-  });
-
   // Raw mouse coordinates: Instant tracking for the center dot
   const mouseX = useMotionValue(-100);
   const mouseY = useMotionValue(-100);
 
   // Fluid physics spring for the outer trailing circle
-  const springConfig = { damping: 26, stiffness: 280, mass: 0.5 };
+  const springConfig = { damping: 25, stiffness: 290, mass: 0.45 };
   const smoothX = useSpring(mouseX, springConfig);
   const smoothY = useSpring(mouseY, springConfig);
-
-  // Clean up faded paw prints on intervals or requestAnimationFrame
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const now = Date.now();
-      setPawSteps((prev) => {
-        if (prev.length === 0) return prev;
-        // Keep steps created within the last 1400ms
-        const filtered = prev.filter((p) => now - p.id < 1400);
-        return filtered.length === prev.length ? prev : filtered;
-      });
-    }, 150);
-
-    return () => clearInterval(timer);
-  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isVisible) setIsVisible(true);
       const curX = e.clientX;
       const curY = e.clientY;
-      const now = Date.now();
 
       mouseX.set(curX);
       mouseY.set(curY);
 
-      // --- PAW TRAIL LOGIC ---
-      const last = lastPawRef.current;
-      const dx = curX - last.x;
-      const dy = curY - last.y;
-      const dist = Math.hypot(dx, dy);
-
-      // Natural paw stride spacing: spawn every ~36-42px of movement
-      const MIN_STRIDE = 38;
-      if (dist >= MIN_STRIDE && (now - last.time) > 45) {
-        // Calculate movement direction in degrees.
-        // In SVG coordinates, Y increases downward. Math.atan2(dy, dx) returns angle clockwise from +X axis (right).
-        // Since the paw SVG is drawn with the front toes pointing upward (-Y direction, i.e. -90 deg),
-        // adding +90 deg aligns the front toes exactly with the mouse movement vector (dx, dy).
-        const angle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
-
-        // Alternate slightly left and right paw footfalls for a natural animal stride
-        const isRight = last.stepCount % 2 === 1;
-        const lateralOffset = 6; // pixels perpendicular to movement
-        const perpAngle = Math.atan2(dy, dx) + (isRight ? Math.PI / 2 : -Math.PI / 2);
-        const spawnX = curX - (dx / dist) * 16 + Math.cos(perpAngle) * lateralOffset;
-        const spawnY = curY - (dy / dist) * 16 + Math.sin(perpAngle) * lateralOffset;
-
-        const newStep: PawStep = {
-          id: now,
-          x: spawnX,
-          y: spawnY,
-          angle: angle + (isRight ? 4 : -4), // subtle natural outward toe angle pointing forward
-          side: isRight ? 'right' : 'left',
-          scale: 0.9 + Math.random() * 0.15,
-          opacity: 0.75,
-        };
-
-        lastPawRef.current = {
-          x: curX,
-          y: curY,
-          time: now,
-          stepCount: last.stepCount + 1,
-        };
-
-        setPawSteps((prev) => {
-          // Limit to at most 18 steps to keep rendering extremely lightweight
-          const updated = [...prev, newStep];
-          return updated.length > 18 ? updated.slice(updated.length - 18) : updated;
-        });
-      }
-
-      // --- CONTEXT AWARE ELEMENT DETECTION ---
+      // --- CONTEXT-AWARE HOVER DETECTION ---
       const target = e.target as HTMLElement | null;
       if (!target) {
         setMode('default');
@@ -116,6 +35,7 @@ export const CustomCursor: React.FC = () => {
         return;
       }
 
+      // Explicit data-cursor attributes
       const cursorAttrEl = target.closest('[data-cursor]') as HTMLElement | null;
       if (cursorAttrEl) {
         const attrVal = cursorAttrEl.getAttribute('data-cursor');
@@ -127,12 +47,12 @@ export const CustomCursor: React.FC = () => {
         }
         if (attrVal === 'image') {
           setMode('image');
-          setContextLabel(customLabel || 'Zoom');
+          setContextLabel(customLabel || 'Photo');
           return;
         }
       }
 
-      // 1. Interactive Button / Enter Trigger
+      // 1. Interactive Buttons / Role buttons
       const buttonEl = target.closest('button, [role="button"], [id*="-btn"]') as HTMLElement | null;
       if (buttonEl) {
         setMode('button');
@@ -161,18 +81,15 @@ export const CustomCursor: React.FC = () => {
         return;
       }
 
-      // 4. Pet / Feature / Story Cards
-      const cardEl = target.closest('[id*="-card"], article, .group') as HTMLElement | null;
+      // 4. Cards & Articles
+      const cardEl = target.closest('[id*="-card"], article') as HTMLElement | null;
       if (cardEl && !cardEl.closest('button')) {
-        const hasCardRole = cardEl.getAttribute('id')?.includes('card') || cardEl.tagName === 'ARTICLE';
-        if (hasCardRole) {
-          setMode('card');
-          setContextLabel('View');
-          return;
-        }
+        setMode('card');
+        setContextLabel('View');
+        return;
       }
 
-      // 5. Images / Avatars
+      // 5. Images & Visual media
       const imgEl = target.closest('img, figure') as HTMLElement | null;
       if (imgEl) {
         setMode('image');
@@ -180,7 +97,7 @@ export const CustomCursor: React.FC = () => {
         return;
       }
 
-      // 6. Text Elements
+      // 6. Text Elements (headings, paragraphs, blockquotes)
       const textEl = target.closest(
         'h1, h2, h3, h4, h5, h6, p, span, li, strong, em, b, i, blockquote, label'
       ) as HTMLElement | null;
@@ -190,7 +107,7 @@ export const CustomCursor: React.FC = () => {
         return;
       }
 
-      // Default idle area
+      // Default empty background area
       setMode('default');
       setContextLabel('');
     };
@@ -217,14 +134,14 @@ export const CustomCursor: React.FC = () => {
 
   if (!isVisible) return null;
 
-  // Context-aware animation properties based on current mode
+  // Context-aware dynamic variants for the outer trailing follower
   const getOuterVariants = () => {
     switch (mode) {
       case 'button':
         return {
-          width: 50,
-          height: 50,
-          scale: isClicking ? 0.85 : 1.15,
+          width: 52,
+          height: 52,
+          scale: isClicking ? 0.86 : 1.2,
           borderColor: '#DE6828',
           borderWidth: 2,
           backgroundColor: 'rgba(222, 104, 40, 0.12)',
@@ -232,8 +149,8 @@ export const CustomCursor: React.FC = () => {
         };
       case 'card':
         return {
-          width: 62,
-          height: 62,
+          width: 64,
+          height: 64,
           scale: isClicking ? 0.9 : 1.1,
           borderColor: '#DE6828',
           borderWidth: 1.5,
@@ -242,8 +159,8 @@ export const CustomCursor: React.FC = () => {
         };
       case 'image':
         return {
-          width: 54,
-          height: 54,
+          width: 56,
+          height: 56,
           scale: isClicking ? 0.88 : 1.05,
           borderColor: '#DE6828',
           borderWidth: 1.5,
@@ -252,33 +169,33 @@ export const CustomCursor: React.FC = () => {
         };
       case 'link':
         return {
-          width: 44,
-          height: 44,
+          width: 46,
+          height: 46,
           scale: isClicking ? 0.85 : 1.25,
           borderColor: '#DE6828',
           borderWidth: 1.5,
-          backgroundColor: 'rgba(222, 104, 40, 0.1)',
+          backgroundColor: 'rgba(222, 104, 40, 0.12)',
           borderRadius: 9999,
         };
       case 'text':
         return {
-          width: 4,
-          height: 24,
+          width: 28,
+          height: 28,
           scale: isClicking ? 0.8 : 1,
-          borderColor: '#DE6828',
-          borderWidth: 1.5,
-          backgroundColor: '#DE6828',
-          borderRadius: 2,
+          borderColor: 'rgba(222, 104, 40, 0.4)',
+          borderWidth: 1,
+          backgroundColor: 'rgba(222, 104, 40, 0.04)',
+          borderRadius: 9999,
         };
       case 'input':
         return {
-          width: 2,
-          height: 22,
+          width: 32,
+          height: 32,
           scale: 1,
           borderColor: '#DE6828',
-          borderWidth: 1,
-          backgroundColor: '#DE6828',
-          borderRadius: 1,
+          borderWidth: 1.5,
+          backgroundColor: 'rgba(222, 104, 40, 0.08)',
+          borderRadius: 9999,
         };
       default:
         return {
@@ -312,9 +229,9 @@ export const CustomCursor: React.FC = () => {
       case 'text':
       case 'input':
         return {
-          scale: 0,
+          scale: isClicking ? 0.6 : 0.9,
           backgroundColor: '#DE6828',
-          opacity: 0,
+          opacity: 0.9,
         };
       default:
         return {
@@ -330,50 +247,7 @@ export const CustomCursor: React.FC = () => {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[99999] overflow-hidden select-none">
-      {/* 
-        ============================================================
-        PAW PRINT TRAIL:
-        Spawns along mouse path, rotated with movement vector, 
-        smoothly appearing with a gentle imprint scale, then fading out.
-        ============================================================
-      */}
-      <AnimatePresence>
-        {pawSteps.map((step) => (
-          <motion.div
-            key={step.id}
-            initial={{ opacity: 0, scale: 0.4 }}
-            animate={{ opacity: 0.68, scale: step.scale }}
-            exit={{ opacity: 0, scale: step.scale * 0.75 }}
-            transition={{
-              opacity: { duration: 1.2, ease: 'easeOut' },
-              scale: { duration: 0.25, ease: 'backOut' },
-            }}
-            style={{
-              left: step.x,
-              top: step.y,
-              transform: `translate(-50%, -50%) rotate(${step.angle}deg)`,
-            }}
-            className="fixed pointer-events-none text-[#DE6828]"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="w-4 h-4 text-[#DE6828]/70 drop-shadow-[0_1px_2px_rgba(222,104,40,0.15)]"
-              aria-hidden="true"
-            >
-              {/* 4 toe pads */}
-              <ellipse cx="6.5" cy="8" rx="1.8" ry="2.5" />
-              <ellipse cx="11" cy="5.5" rx="1.9" ry="2.7" />
-              <ellipse cx="15.5" cy="6" rx="1.8" ry="2.6" />
-              <ellipse cx="19" cy="9.5" rx="1.6" ry="2.2" />
-              {/* main pad */}
-              <path d="M12 11.5c-3 0-5.4 2-5.1 5 .2 2 2 3.7 5.1 3.7s4.9-1.7 5.1-3.7c.3-3-2.1-5-5.1-5z" />
-            </svg>
-          </motion.div>
-        ))}
-      </AnimatePresence>
-
-      {/* 1. Outer Context-Aware Follower Container */}
+      {/* 1. Outer Context-Aware Trailing Ring & Morphing Surface */}
       <motion.div
         style={{
           x: smoothX,
@@ -398,7 +272,7 @@ export const CustomCursor: React.FC = () => {
         }}
         className="fixed top-0 left-0 flex items-center justify-center pointer-events-none"
       >
-        {/* Context badge label (e.g. "View" on cards, "Photo" on images, "Enter" on entry button) */}
+        {/* Context-aware badge label (e.g., "View" over cards, "Photo" over images, "Enter" over the portal trigger) */}
         <AnimatePresence>
           {contextLabel && (mode === 'card' || mode === 'image') && (
             <motion.span
@@ -415,7 +289,7 @@ export const CustomCursor: React.FC = () => {
         </AnimatePresence>
       </motion.div>
 
-      {/* 2. Inner Center Ball: Tracks mouse directly, morphs or dissolves depending on context */}
+      {/* 2. Inner Pointer Dot: Responsive real-time tracking with hover morphing */}
       <motion.div
         style={{
           x: mouseX,
