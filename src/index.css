@@ -46,6 +46,18 @@
   }
 }
 
+@keyframes shimmer-sweep {
+  0% {
+    background-position: 100% center;
+  }
+  50% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: 100% center;
+  }
+}
+
 .animate-spin-slow {
   animation: spin-slow 28s linear infinite;
 }

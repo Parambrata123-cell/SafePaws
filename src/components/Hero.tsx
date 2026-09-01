@@ -27,7 +27,22 @@ export const Hero: React.FC<HeroProps> = ({
           >
             When they <br />
             wander, we <br />
-            search together.
+            <motion.span
+              className="inline-block text-[#241812]"
+              initial={{ x: -90, opacity: 0, filter: 'blur(8px)' }}
+              animate={{
+                x: [-90, -35, -6, 0],
+                opacity: [0, 0.5, 0.85, 1],
+                filter: ['blur(8px)', 'blur(2.5px)', 'blur(0.5px)', 'blur(0px)'],
+              }}
+              transition={{
+                duration: 2.2,
+                times: [0, 0.22, 0.68, 1],
+                ease: [0.08, 0.82, 0.17, 1],
+              }}
+            >
+              search together.
+            </motion.span>
           </motion.h1>
 
           <motion.p

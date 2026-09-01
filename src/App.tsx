@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { CustomCursor } from './components/CustomCursor';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { FeaturesSection } from './components/FeaturesSection';
@@ -107,6 +108,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF6F0] text-[#241812] selection:bg-[#DE6828]/20 selection:text-[#B54C14]">
+      {/* Interactive Custom Follower Cursor */}
+      <CustomCursor />
+
       {/* 1. Header Navigation */}
       <Header
         onOpenHowItWorks={() => setIsHowItWorksOpen(true)}
