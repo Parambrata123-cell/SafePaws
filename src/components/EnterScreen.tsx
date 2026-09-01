@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { PawIcon } from './Header';
 
 interface EnterScreenProps {
@@ -8,12 +8,33 @@ interface EnterScreenProps {
 }
 
 export const EnterScreen: React.FC<EnterScreenProps> = ({ onEnter }) => {
-  // Stages: 'idle' (Press here to enter) -> 'animating' (Left-to-right logo intro) -> 'complete'
-  const [stage, setStage] = useState<'idle' | 'animating'>('idle');
+  // Stages:
+  // 1. 'intro': Awesome opening sequence with ambient ripples, glowing trail, and paw imprint
+  // 2. 'ready': "Press here to enter" button blooms in smoothly with magnetic light sheen
+  // 3. 'animating': Kinetic brand reveal when clicked, then exits to main website
+  const [stage, setStage] = useState<'intro' | 'ready' | 'animating'>('intro');
+  const [introStep, setIntroStep] = useState(0);
+
+  useEffect(() => {
+    // Choreographed intro animation steps before showing "Press here to enter"
+    const t1 = setTimeout(() => setIntroStep(1), 300);   // Aurora aura & golden trail ignite
+    const t2 = setTimeout(() => setIntroStep(2), 900);   // Paw emblem stamps down with gentle shockwave
+    const t3 = setTimeout(() => setIntroStep(3), 1600);  // Text typography unfolds
+    const t4 = setTimeout(() => {
+      setIntroStep(4);
+      setStage('ready'); // Reveal the "Press here to enter" button
+    }, 2300);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+    };
+  }, []);
 
   const handleStartAnimation = () => {
     setStage('animating');
-    // Allow the full choreographed logo animation sequence to play, then transition to website
     setTimeout(() => {
       onEnter();
     }, 2800);
@@ -33,83 +54,189 @@ export const EnterScreen: React.FC<EnterScreenProps> = ({ onEnter }) => {
         background: 'radial-gradient(circle at 50% 50%, #FAF3EA 0%, #F1E3D1 55%, #E8D5BF 100%)',
       }}
     >
-      {/* Ambient warm lighting ripple */}
+      {/* Dynamic ambient energy orbs */}
       <motion.div
         animate={{
-          scale: stage === 'animating' ? [1, 1.3, 1.1] : [1, 1.15, 1],
-          opacity: stage === 'animating' ? [0.3, 0.6, 0.4] : [0.25, 0.45, 0.25],
+          scale: stage === 'animating' ? [1, 1.35, 1.1] : [1, 1.18, 1],
+          opacity: stage === 'animating' ? [0.4, 0.7, 0.4] : [0.25, 0.5, 0.25],
+          rotate: [0, 90, 180, 270, 360],
         }}
         transition={{
-          duration: stage === 'animating' ? 2.5 : 6,
-          repeat: stage === 'animating' ? 0 : Infinity,
+          scale: { duration: stage === 'animating' ? 2.5 : 7, repeat: stage === 'animating' ? 0 : Infinity, ease: 'easeInOut' },
+          opacity: { duration: stage === 'animating' ? 2.5 : 7, repeat: stage === 'animating' ? 0 : Infinity, ease: 'easeInOut' },
+          rotate: { duration: 25, repeat: Infinity, ease: 'linear' },
+        }}
+        className="absolute w-[680px] h-[680px] rounded-full bg-gradient-to-tr from-[#DE6828]/20 via-[#F59E0B]/15 to-transparent blur-3xl pointer-events-none"
+      />
+
+      <motion.div
+        animate={{
+          scale: [1.1, 0.95, 1.1],
+          opacity: [0.2, 0.35, 0.2],
+        }}
+        transition={{
+          duration: 9,
+          repeat: Infinity,
           ease: 'easeInOut',
         }}
-        className="absolute w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-[#DE6828]/15 via-[#F3CEB4]/25 to-transparent blur-3xl pointer-events-none"
+        className="absolute -bottom-24 -left-24 w-[480px] h-[480px] rounded-full bg-[#DE6828]/15 blur-3xl pointer-events-none"
       />
 
       <AnimatePresence mode="wait">
-        {stage === 'idle' ? (
-          /* ========================================================
-             STAGE 1: "Press here to enter" Clean Centered Screen
-             ======================================================== */
+        {/* =========================================================================
+            STAGE 1 & 2: Awesome Pre-Button Intro & "Press here to enter" Presentation
+            ========================================================================= */}
+        {stage !== 'animating' ? (
           <motion.div
-            key="idle-prompt"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9, y: -20, transition: { duration: 0.35 } }}
+            key="pre-enter-container"
             className="relative z-10 flex flex-col items-center justify-center px-6 text-center"
           >
-            {/* Center Interactive Button */}
-            <motion.button
-              id="press-to-enter-btn"
-              onClick={handleStartAnimation}
-              initial={{ opacity: 0, y: 15, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              transition={{
-                duration: 0.8,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-              className="group relative flex items-center gap-3.5 px-8 py-4 rounded-full bg-white/70 hover:bg-white/95 active:bg-white backdrop-blur-xl border border-white/90 shadow-[0_8px_32px_rgba(61,44,34,0.08),inset_0_1px_2px_rgba(255,255,255,1)] hover:shadow-[0_12px_40px_rgba(222,104,40,0.2),inset_0_1px_2px_rgba(255,255,255,1)] transition-all duration-300 cursor-pointer"
-            >
-              {/* Subtle light sheen across button */}
-              <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
-                <div className="w-full h-full bg-gradient-to-r from-transparent via-white/60 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
-              </div>
+            {/* 1. Introductory Emblem & Ripple Wave Animation */}
+            <div className="relative flex items-center justify-center mb-7">
+              {/* Concentric expanding acoustic sonar rings */}
+              <AnimatePresence>
+                {introStep >= 1 && (
+                  <>
+                    <motion.div
+                      initial={{ scale: 0.3, opacity: 0 }}
+                      animate={{ scale: [0.4, 1.8, 2.4], opacity: [0.8, 0.3, 0] }}
+                      transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut' }}
+                      className="absolute w-24 h-24 rounded-full border border-[#DE6828]/40 pointer-events-none"
+                    />
+                    <motion.div
+                      initial={{ scale: 0.3, opacity: 0 }}
+                      animate={{ scale: [0.4, 1.5, 2.1], opacity: [0.7, 0.25, 0] }}
+                      transition={{ duration: 2.4, delay: 0.6, repeat: Infinity, ease: 'easeOut' }}
+                      className="absolute w-24 h-24 rounded-full border border-[#F59E0B]/35 pointer-events-none"
+                    />
+                  </>
+                )}
+              </AnimatePresence>
 
-              <span className="font-serif text-xl sm:text-2xl text-[#2E2018] group-hover:text-[#DE6828] tracking-tight transition-colors duration-200">
-                Press here to enter
-              </span>
+              {/* Orbiting Golden Star Particles during intro */}
+              <AnimatePresence>
+                {introStep >= 1 && (
+                  <motion.div
+                    initial={{ rotate: -90, opacity: 0 }}
+                    animate={{ rotate: 270, opacity: 1 }}
+                    transition={{ duration: 1.8, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute w-28 h-28 pointer-events-none"
+                  >
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#DE6828] shadow-[0_0_12px_#DE6828]" />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-              <motion.span
-                animate={{ x: [0, 4, 0] }}
-                transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
-                className="flex items-center justify-center w-7 h-7 rounded-full bg-[#FAF4ED] group-hover:bg-[#DE6828] text-[#3D2C22] group-hover:text-white transition-colors duration-200 shadow-sm"
+              {/* Central Glowing Icon with Spring Bounce - clean transparent icon with no opaque white box texture */}
+              <motion.div
+                initial={{ scale: 0, opacity: 0, rotate: -25, y: -30 }}
+                animate={{
+                  scale: introStep >= 2 ? 1 : 0,
+                  opacity: introStep >= 2 ? 1 : 0,
+                  rotate: introStep >= 2 ? 0 : -25,
+                  y: introStep >= 2 ? 0 : -30,
+                }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 380,
+                  damping: 22,
+                  mass: 0.8,
+                }}
+                className="relative flex items-center justify-center text-[#DE6828]"
               >
-                <ArrowRight className="w-4 h-4" />
-              </motion.span>
-            </motion.button>
+                <PawIcon className="w-10 h-10 sm:w-12 sm:h-12 text-[#DE6828] drop-shadow-[0_4px_12px_rgba(222,104,40,0.3)]" />
+              </motion.div>
+            </div>
 
-            {/* Soft bottom hint */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.6 }}
-              transition={{ delay: 0.3, duration: 0.8 }}
-              className="mt-6 text-xs sm:text-sm tracking-wider uppercase font-medium text-[#7D6B5F]"
+            {/* 2. Micro-Title & Tagline Reveal */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{
+                opacity: introStep >= 3 ? 1 : 0,
+                y: introStep >= 3 ? 0 : 15,
+              }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col items-center mb-6"
             >
-              SafePaws • Community Lost Pet Search
-            </motion.p>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#DE6828]/10 border border-[#DE6828]/20 mb-2">
+                <Sparkles className="w-3.5 h-3.5 text-[#DE6828]" />
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-[#DE6828]">
+                  Lost & Found Pet Rescue
+                </span>
+              </div>
+              <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#2E2018]">
+                SafePaws Portal
+              </h2>
+            </motion.div>
+
+            {/* 3. The "Press here to enter" Button Bloom Transition */}
+            <AnimatePresence>
+              {stage === 'ready' && (
+                <motion.div
+                  key="button-wrapper"
+                  initial={{ opacity: 0, y: 25, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 320,
+                    damping: 24,
+                    mass: 0.7,
+                  }}
+                  className="flex flex-col items-center"
+                >
+                  <motion.button
+                    id="press-to-enter-btn"
+                    onClick={handleStartAnimation}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.96 }}
+                    className="group relative flex items-center gap-3.5 px-9 py-4.5 rounded-full bg-white/85 hover:bg-white active:bg-white backdrop-blur-xl border border-white shadow-[0_12px_36px_rgba(61,44,34,0.1),inset_0_1px_2px_rgba(255,255,255,1)] hover:shadow-[0_16px_46px_rgba(222,104,40,0.26),inset_0_1px_2px_rgba(255,255,255,1)] transition-all duration-300 cursor-pointer"
+                  >
+                    {/* Animated Light Sweep Bar */}
+                    <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+                      <motion.div
+                        animate={{ x: ['-100%', '200%'] }}
+                        transition={{ repeat: Infinity, duration: 2.8, ease: 'easeInOut', repeatDelay: 1.5 }}
+                        className="w-1/2 h-full bg-gradient-to-r from-transparent via-white/80 to-transparent skew-x-12"
+                      />
+                    </div>
+
+                    <span className="font-serif text-xl sm:text-2xl text-[#2E2018] group-hover:text-[#DE6828] tracking-tight transition-colors duration-200">
+                      Press here to enter
+                    </span>
+
+                    <motion.span
+                      animate={{ x: [0, 4, 0] }}
+                      transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+                      className="flex items-center justify-center w-8 h-8 rounded-full bg-[#FAF4ED] group-hover:bg-[#DE6828] text-[#3D2C22] group-hover:text-white transition-colors duration-200 shadow-sm"
+                    >
+                      <ArrowRight className="w-4 h-4" />
+                    </motion.span>
+                  </motion.button>
+
+                  {/* Gentle Footer Indicator */}
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.7 }}
+                    transition={{ delay: 0.3, duration: 0.8 }}
+                    className="mt-6 text-xs sm:text-sm tracking-wider uppercase font-medium text-[#7D6B5F]"
+                  >
+                    Community Lost Pet Search Network
+                  </motion.p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         ) : (
-          /* ========================================================
-             STAGE 2: Kinetic Left-to-Right Logo Reveal Animation
-             Inspired by the reference video
-             ======================================================== */
+          /* =========================================================================
+              STAGE 3: Kinetic Left-to-Right Logo Reveal Animation Sequence
+             ========================================================================= */
           <motion.div
             key="logo-reveal-animation"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
             className="relative z-20 flex flex-col items-center justify-center w-full max-w-4xl px-4 select-none"
           >
             {/* 1. Kinetic Lead Particle Swooping across from Left to Right */}
@@ -149,7 +276,6 @@ export const EnterScreen: React.FC<EnterScreenProps> = ({ onEnter }) => {
 
             {/* Central Brand Unit: Logo Icon + "SafePaws" Typography */}
             <div className="relative flex items-center justify-center gap-4 sm:gap-5">
-              
               {/* Logo Box with Ghost Motion Trails moving Left to Right */}
               <div className="relative flex items-center justify-center">
                 {/* Ghost Trail 1 (Farthest left echo) */}
@@ -164,9 +290,9 @@ export const EnterScreen: React.FC<EnterScreenProps> = ({ onEnter }) => {
                     duration: 0.9,
                     ease: [0.16, 1, 0.3, 1],
                   }}
-                  className="absolute w-14 h-14 sm:w-18 sm:h-18 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#DE6828]/25 to-transparent backdrop-blur-sm border border-[#DE6828]/30 flex items-center justify-center"
+                  className="absolute flex items-center justify-center pointer-events-none"
                 >
-                  <PawIcon className="w-7 h-7 sm:w-9 sm:h-9 text-[#DE6828]/40" />
+                  <PawIcon className="w-7 h-7 sm:w-9 sm:h-9 text-[#DE6828]/25" />
                 </motion.div>
 
                 {/* Ghost Trail 2 (Closer echo) */}
@@ -182,12 +308,12 @@ export const EnterScreen: React.FC<EnterScreenProps> = ({ onEnter }) => {
                     delay: 0.05,
                     ease: [0.16, 1, 0.3, 1],
                   }}
-                  className="absolute w-14 h-14 sm:w-18 sm:h-18 rounded-2xl sm:rounded-3xl bg-white/50 backdrop-blur-md border border-white/60 flex items-center justify-center"
+                  className="absolute flex items-center justify-center pointer-events-none"
                 >
-                  <PawIcon className="w-7 h-7 sm:w-9 sm:h-9 text-[#26170E]/30" />
+                  <PawIcon className="w-8 h-8 sm:w-10 sm:h-10 text-[#DE6828]/30" />
                 </motion.div>
 
-                {/* Primary Solid Logo Icon (Sweeps from left and settles with spring physics) */}
+                {/* Primary Solid Logo Icon (Sweeps from left and settles with spring physics) - clean transparent icon */}
                 <motion.div
                   initial={{ x: -140, opacity: 0, scale: 0.82, rotate: -12 }}
                   animate={{
@@ -200,19 +326,9 @@ export const EnterScreen: React.FC<EnterScreenProps> = ({ onEnter }) => {
                     duration: 1.1,
                     ease: [0.12, 0.9, 0.24, 1],
                   }}
-                  className="relative z-20 w-14 h-14 sm:w-18 sm:h-18 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-white/95 to-white/65 backdrop-blur-xl border border-white/90 shadow-[0_10px_35px_rgba(38,23,14,0.12),inset_0_1px_2px_rgba(255,255,255,1)] flex items-center justify-center text-[#26170E]"
+                  className="relative z-20 flex items-center justify-center text-[#DE6828]"
                 >
-                  <PawIcon className="w-7 h-7 sm:w-9 sm:h-9 text-[#26170E]" />
-
-                  {/* Specular light swipe across the paw card */}
-                  <motion.div
-                    initial={{ x: '-100%' }}
-                    animate={{ x: '200%' }}
-                    transition={{ delay: 0.6, duration: 0.8, ease: 'easeOut' }}
-                    className="absolute inset-0 rounded-2xl sm:rounded-3xl overflow-hidden pointer-events-none"
-                  >
-                    <div className="w-full h-full bg-gradient-to-r from-transparent via-white/70 to-transparent skew-x-12" />
-                  </motion.div>
+                  <PawIcon className="w-9 h-9 sm:w-11 sm:h-11 text-[#DE6828] drop-shadow-[0_4px_16px_rgba(222,104,40,0.35)]" />
                 </motion.div>
               </div>
 
