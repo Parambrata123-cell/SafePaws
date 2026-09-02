@@ -62,10 +62,10 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
         </div>
 
-        {/* Center Nav Links - Inside small oval pill */}
+        {/* Center Nav Links - Inside glassmorphism pill */}
         <nav
           onMouseLeave={() => setHoveredNav(null)}
-          className="hidden md:flex items-center gap-2 py-1.5 px-6 rounded-full bg-white/70 backdrop-blur-xl border border-white/80 shadow-[0_2px_12px_rgba(38,23,14,0.05),inset_0_1px_2px_rgba(255,255,255,0.9)] text-[14.5px] font-medium"
+          className="hidden md:flex items-center gap-2 py-1.5 px-6 rounded-full bg-white/40 hover:bg-white/50 backdrop-blur-2xl border border-white/70 shadow-[0_8px_32px_0_rgba(38,23,14,0.06),inset_0_1.5px_2px_rgba(255,255,255,0.85),inset_0_-1px_2px_rgba(232,222,200,0.3)] text-[14.5px] font-medium transition-all duration-300"
         >
           {navItems.map((item) => {
             const isHovered = hoveredNav === item.id;
