@@ -135,7 +135,7 @@ export default function App() {
       />
 
       {/* 2. Hero Section matching screenshot */}
-      <main className="flex-1">
+      <main className="relative z-10 flex-1">
         <Hero
           onJoinClick={() => setIsProfileModalOpen(true)}
           onOpenOliveProfile={() => {
@@ -164,11 +164,13 @@ export default function App() {
       </main>
 
       {/* 6. Footer matching screenshot */}
-      <Footer
-        onOpenPrivacy={() => setInfoModalType('privacy')}
-        onOpenGuidelines={() => setInfoModalType('guidelines')}
-        onOpenContact={() => setInfoModalType('contact')}
-      />
+      <div className="relative z-10">
+        <Footer
+          onOpenPrivacy={() => setInfoModalType('privacy')}
+          onOpenGuidelines={() => setInfoModalType('guidelines')}
+          onOpenContact={() => setInfoModalType('contact')}
+        />
+      </div>
 
       {/* Interactive Modals */}
       <PetProfileModal

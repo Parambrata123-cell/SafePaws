@@ -49,7 +49,8 @@ export const EnterScreen: React.FC<EnterScreenProps> = ({ onEnter }) => {
         filter: 'blur(4px)',
         transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
       }}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#FAF3EA] select-none overflow-hidden cursor-default"
+      id="enter-screen-bg"
+      className="enter-screen-bg fixed inset-0 z-[100] flex items-center justify-center bg-[#FAF3EA] select-none overflow-hidden cursor-default"
       style={{
         background: 'radial-gradient(circle at 50% 50%, #FAF3EA 0%, #F1E3D1 55%, #E8D5BF 100%)',
       }}
@@ -89,7 +90,8 @@ export const EnterScreen: React.FC<EnterScreenProps> = ({ onEnter }) => {
         {stage !== 'animating' ? (
           <motion.div
             key="pre-enter-container"
-            className="relative z-10 flex flex-col items-center justify-center px-6 text-center"
+            data-enter-content="true"
+            className="relative z-[120] flex flex-col items-center justify-center px-6 text-center"
           >
             {/* 1. Introductory Emblem & Ripple Wave Animation */}
             <div className="relative flex items-center justify-center mb-7">
@@ -234,10 +236,11 @@ export const EnterScreen: React.FC<EnterScreenProps> = ({ onEnter }) => {
              ========================================================================= */
           <motion.div
             key="logo-reveal-animation"
+            data-enter-content="true"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="relative z-20 flex flex-col items-center justify-center w-full max-w-4xl px-4 select-none"
+            className="relative z-[120] flex flex-col items-center justify-center w-full max-w-4xl px-4 select-none"
           >
             {/* 1. Kinetic Lead Particle Swooping across from Left to Right */}
             <motion.div
