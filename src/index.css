@@ -20,8 +20,29 @@
     font-family: 'Newsreader', Georgia, serif;
   }
 
-  /* Custom cursor enabled */
-  html, body, button, a, input, [role="button"] {
+  /* Custom cursor enabled universally across the entire app and all elements */
+  *,
+  *::before,
+  *::after {
+    cursor: none !important;
+  }
+
+  html,
+  body,
+  button,
+  a,
+  input,
+  textarea,
+  select,
+  label,
+  summary,
+  [role="button"],
+  [role="link"],
+  [role="tab"],
+  [tabindex],
+  .cursor-pointer,
+  .cursor-default,
+  .cursor-text {
     cursor: none !important;
   }
 }

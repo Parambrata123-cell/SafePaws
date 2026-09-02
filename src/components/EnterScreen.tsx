@@ -50,7 +50,7 @@ export const EnterScreen: React.FC<EnterScreenProps> = ({ onEnter }) => {
         transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
       }}
       id="enter-screen-bg"
-      className="enter-screen-bg fixed inset-0 z-[100] flex items-center justify-center bg-[#FAF3EA] select-none overflow-hidden cursor-default"
+      className="enter-screen-bg fixed inset-0 z-[100] flex items-center justify-center bg-[#FAF3EA] select-none overflow-hidden"
       style={{
         background: 'radial-gradient(circle at 50% 50%, #FAF3EA 0%, #F1E3D1 55%, #E8D5BF 100%)',
       }}

@@ -29,17 +29,17 @@ export const Hero: React.FC<HeroProps> = ({
     <section className="relative w-full max-w-7xl mx-auto px-6 sm:px-10 lg:px-12 pt-8 pb-16 lg:pt-14 lg:pb-24">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
         {/* Left Column: Typography and Action */}
-        <div className="lg:col-span-6 flex flex-col items-start z-10">
+        <div className="lg:col-span-6 flex flex-col items-start relative z-20">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="font-serif text-[42px] sm:text-[56px] lg:text-[68px] leading-[1.08] tracking-[-0.02em] text-[#241812] font-normal"
+            className="font-serif text-[42px] sm:text-[56px] lg:text-[68px] leading-[1.08] tracking-[-0.02em] text-[#241812] font-normal relative z-20"
           >
             When they <br />
             wander, we <br />
             <motion.span
-              className="inline-block text-[#241812]"
+              className="inline-block text-[#241812] relative z-20"
               initial={{ x: -90, opacity: 0, filter: 'blur(8px)' }}
               animate={{
                 x: [-90, -35, -6, 0],
@@ -83,7 +83,7 @@ export const Hero: React.FC<HeroProps> = ({
         </div>
 
         {/* Right Column: Orbital Radar & Floating Interactive Cards */}
-        <div className="lg:col-span-6 flex justify-center items-center relative min-h-[380px] sm:min-h-[460px] lg:min-h-[500px]">
+        <div className="lg:col-span-6 flex justify-center items-center relative min-h-[380px] sm:min-h-[460px] lg:min-h-[500px] z-10">
           <div
             id="hero-circular-container"
             data-no-paw-print="true"
@@ -134,8 +134,7 @@ export const Hero: React.FC<HeroProps> = ({
               }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              title="Click to circulate"
-              className="relative w-[180px] sm:w-[210px] h-[180px] sm:h-[210px] rounded-full bg-gradient-to-br from-[#F5E2BE] via-[#F2DDB4] to-[#E9D1A2] shadow-[0_12px_32px_rgba(215,167,105,0.24)] flex items-center justify-center cursor-pointer transition-shadow hover:shadow-[0_16px_40px_rgba(215,167,105,0.36)] z-10 select-none"
+              className="relative w-[180px] sm:w-[210px] h-[180px] sm:h-[210px] rounded-full bg-gradient-to-br from-[#F5E2BE] via-[#F2DDB4] to-[#E9D1A2] shadow-[0_12px_32px_rgba(215,167,105,0.24)] flex items-center justify-center cursor-pointer transition-shadow hover:shadow-[0_16px_40px_rgba(215,167,105,0.36)] z-0 select-none"
             >
               {/* Inner highlight circle */}
               <div className="w-[140px] sm:w-[165px] h-[140px] sm:h-[165px] rounded-full bg-gradient-to-b from-[#F7E7C9] to-[#EBD3A7] flex items-center justify-center shadow-inner pointer-events-none">

@@ -47,8 +47,12 @@ export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false 
   const mouseX = useMotionValue(-100);
   const mouseY = useMotionValue(-100);
 
-  // Fluid physics spring for the outer trailing circle
-  const springConfig = { damping: 25, stiffness: 290, mass: 0.45 };
+  // Direct DOM element refs for immediate 0ms transform updates bypass
+  const outerCursorRef = useRef<HTMLDivElement>(null);
+  const innerCursorRef = useRef<HTMLDivElement>(null);
+
+  // Instant zero-lag spring physics for outer ring
+  const springConfig = { damping: 35, stiffness: 1000, mass: 0.05 };
   const smoothX = useSpring(mouseX, springConfig);
   const smoothY = useSpring(mouseY, springConfig);
 
@@ -128,6 +132,14 @@ export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false 
 
       mouseX.set(curX);
       mouseY.set(curY);
+
+      // Immediate DOM transform update bypassing React/Motion rendering loop for instantaneous (<0.1ms) tracking
+      if (innerCursorRef.current) {
+        innerCursorRef.current.style.transform = `translate3d(${curX}px, ${curY}px, 0px) translate(-50%, -50%)`;
+      }
+      if (outerCursorRef.current) {
+        outerCursorRef.current.style.transform = `translate3d(${curX}px, ${curY}px, 0px) translate(-50%, -50%)`;
+      }
 
       // --- TARGET CHECK FOR RESTRICTING PAW PRINTS OVER CONTENT & BUTTONS ---
       const target = e.target as HTMLElement | null;
@@ -247,6 +259,11 @@ export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false 
       if (cursorAttrEl) {
         const attrVal = cursorAttrEl.getAttribute('data-cursor');
         const customLabel = cursorAttrEl.getAttribute('data-cursor-label') || '';
+        if (attrVal === 'default') {
+          setMode('default');
+          setContextLabel('');
+          return;
+        }
         if (attrVal === 'Spin') {
           setMode('button');
           setContextLabel('Spin');
@@ -304,9 +321,9 @@ export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false 
         }
       }
 
-      // 5. Images & Visual media
+      // 5. Images & Visual media (ignore QR codes or elements marked to suppress photo hover)
       const imgEl = target.closest('img, figure') as HTMLElement | null;
-      if (imgEl) {
+      if (imgEl && !imgEl.closest('[data-cursor="default"], [data-qr-tag="true"], [data-no-photo-hover="true"]')) {
         setMode('image');
         setContextLabel('Photo');
         return;
@@ -411,12 +428,12 @@ export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false 
         };
       case 'card':
         return {
-          width: 64,
-          height: 64,
-          scale: isClicking ? 0.9 : 1.1,
+          width: 52,
+          height: 52,
+          scale: isClicking ? 0.88 : 1.15,
           borderColor: '#DE6828',
-          borderWidth: 1.5,
-          backgroundColor: 'rgba(222, 104, 40, 0.92)',
+          borderWidth: 2,
+          backgroundColor: 'transparent',
           borderRadius: 9999,
         };
       case 'image':
@@ -482,6 +499,11 @@ export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false 
           opacity: 1,
         };
       case 'card':
+        return {
+          scale: isClicking ? 0.7 : 1.25,
+          backgroundColor: '#DE6828',
+          opacity: 1,
+        };
       case 'image':
         return {
           scale: 0,
@@ -629,13 +651,15 @@ export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false 
         ============================================================
       */}
       <div className="pointer-events-none fixed inset-0 z-[99999] overflow-hidden select-none">
-        {/* 1. Outer Context-Aware Trailing Ring & Morphing Surface */}
+        {/* 1. Outer Context-Aware Ring & Morphing Surface */}
         <motion.div
+          ref={outerCursorRef}
           style={{
             x: smoothX,
             y: smoothY,
             translateX: '-50%',
             translateY: '-50%',
+            willChange: 'transform',
           }}
           animate={{
             width: outerAnim.width,
@@ -647,16 +671,14 @@ export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false 
             borderRadius: outerAnim.borderRadius,
           }}
           transition={{
-            type: 'spring',
-            stiffness: 350,
-            damping: 25,
-            mass: 0.4,
+            duration: 0.1,
+            ease: 'easeOut',
           }}
           className="fixed top-0 left-0 flex items-center justify-center pointer-events-none"
         >
           {/* Context-aware badge label */}
           <AnimatePresence>
-            {contextLabel && (mode === 'card' || mode === 'image') && (
+            {contextLabel && mode === 'image' && (
               <motion.span
                 key={contextLabel}
                 initial={{ opacity: 0, scale: 0.6 }}
@@ -671,13 +693,15 @@ export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false 
           </AnimatePresence>
         </motion.div>
 
-        {/* 2. Inner Pointer Dot: Responsive real-time tracking with hover morphing */}
+        {/* 2. Inner Pointer Dot: Instantaneous real-time tracking with hover morphing */}
         <motion.div
+          ref={innerCursorRef}
           style={{
             x: mouseX,
             y: mouseY,
             translateX: '-50%',
             translateY: '-50%',
+            willChange: 'transform',
           }}
           animate={{
             scale: innerAnim.scale,
@@ -685,7 +709,7 @@ export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false 
             opacity: innerAnim.opacity,
           }}
           transition={{
-            duration: 0.14,
+            duration: 0.08,
             ease: 'easeOut',
           }}
           className="fixed top-0 left-0 w-2 h-2 rounded-full pointer-events-none"

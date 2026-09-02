@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { X, QrCode, Phone, MapPin, Heart, Shield, Share2, Check, Download, Eye, ExternalLink } from 'lucide-react';
+import QRCode from 'qrcode';
 import { Pet } from '../../types';
 import { PawIcon } from '../Header';
 
@@ -20,6 +21,32 @@ export const QrTagModal: React.FC<QrTagModalProps> = ({
   const [activeTab, setActiveTab] = useState<'tag' | 'stranger_preview'>('tag');
   const [gpsSent, setGpsSent] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
+
+  const tagUrl = `https://safepaws.app/tag/${pet.qrTagId}`;
+
+  useEffect(() => {
+    let isMounted = true;
+    QRCode.toDataURL(tagUrl, {
+      width: 260,
+      margin: 1,
+      color: {
+        dark: '#1C120C',
+        light: '#FFFFFF',
+      },
+      errorCorrectionLevel: 'M',
+    })
+      .then((url) => {
+        if (isMounted) setQrDataUrl(url);
+      })
+      .catch((err) => {
+        console.error('Error generating QR code:', err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [tagUrl]);
 
   if (!isOpen) return null;
 
@@ -117,31 +144,30 @@ export const QrTagModal: React.FC<QrTagModalProps> = ({
                     <span className="font-bold text-xs tracking-tight">SafePaws</span>
                   </div>
 
-                  {/* Simulated QR Code Canvas */}
-                  <div className="p-2 bg-white rounded-xl shadow-xs border border-[#E0D0BD] my-1">
-                    {/* SVG Stylized QR code */}
-                    <svg viewBox="0 0 100 100" className="w-24 h-24 text-[#241812]">
-                      <rect x="5" y="5" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="6" rx="4" />
-                      <rect x="13" y="13" width="12" height="12" fill="currentColor" rx="2" />
-                      <rect x="67" y="5" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="6" rx="4" />
-                      <rect x="75" y="13" width="12" height="12" fill="currentColor" rx="2" />
-                      <rect x="5" y="67" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="6" rx="4" />
-                      <rect x="13" y="75" width="12" height="12" fill="currentColor" rx="2" />
-                      
-                      {/* Grid Pattern Dots */}
-                      <rect x="42" y="8" width="6" height="6" fill="currentColor" />
-                      <rect x="52" y="18" width="6" height="6" fill="currentColor" />
-                      <rect x="42" y="28" width="6" height="6" fill="currentColor" />
-                      <rect x="8" y="42" width="6" height="6" fill="currentColor" />
-                      <rect x="18" y="52" width="6" height="6" fill="currentColor" />
-                      <rect x="42" y="42" width="16" height="16" fill="#DE6828" rx="3" />
-                      <rect x="67" y="42" width="6" height="6" fill="currentColor" />
-                      <rect x="78" y="52" width="6" height="6" fill="currentColor" />
-                      <rect x="42" y="67" width="6" height="6" fill="currentColor" />
-                      <rect x="54" y="78" width="6" height="6" fill="currentColor" />
-                      <rect x="67" y="78" width="8" height="8" fill="currentColor" />
-                      <rect x="85" y="85" width="6" height="6" fill="currentColor" />
-                    </svg>
+                  {/* Real Scannable QR Code */}
+                  <div
+                    data-cursor="default"
+                    data-qr-tag="true"
+                    data-no-photo-hover="true"
+                    className="relative p-2 bg-white rounded-2xl shadow-xs border border-[#E0D0BD] my-1"
+                  >
+                    {qrDataUrl ? (
+                      <div className="relative w-24 h-24" data-cursor="default" data-qr-tag="true">
+                        <img
+                          src={qrDataUrl}
+                          alt={`Scannable QR tag for ${pet.name}`}
+                          data-cursor="default"
+                          data-qr-tag="true"
+                          className="w-24 h-24 rounded-lg block"
+                        />
+                        {/* Elegant micro paw badge in center of QR code */}
+                        <div className="absolute inset-0 m-auto w-5 h-5 rounded-full bg-white shadow-xs border border-[#E8DAC8] flex items-center justify-center pointer-events-none">
+                          <PawIcon className="w-3 h-3 text-[#DE6828]" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-24 h-24 bg-[#F8F2EA] rounded-lg animate-pulse" />
+                    )}
                   </div>
 
                   <div className="font-bold text-sm text-[#241812] tracking-tight">{pet.name}</div>
