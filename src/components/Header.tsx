@@ -47,11 +47,12 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-40 w-full px-3 sm:px-6 lg:px-8 pt-4 pb-2 transition-all">
       <div className="w-full max-w-7xl mx-auto flex items-center justify-between">
-        {/* Brand Logo */}
+        {/* Brand Logo - scrolls smoothly to the top of the page */}
         <div
           id="nav-brand-logo"
           className="flex items-center gap-2.5 cursor-pointer select-none group py-1.5 px-3 rounded-2xl hover:bg-[#FAF3EA]/80 transition-all duration-200"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          title="SafePaws"
         >
           <div className="w-9 h-9 rounded-xl bg-white border border-[#E8DEC8]/80 shadow-[0_2px_8px_rgba(38,23,14,0.06)] flex items-center justify-center text-[#26170E] transition-transform group-hover:scale-105">
             <PawIcon className="w-5 h-5 text-[#26170E]" />

@@ -23,6 +23,7 @@ export const Footer: React.FC<FooterProps> = ({
           id="footer-brand-logo"
           className="flex items-center gap-2 cursor-pointer group"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          title="SafePaws"
         >
           <PawIcon className="w-5 h-5 text-[#241812] transition-transform group-hover:scale-105" />
           <span className="font-semibold text-[17px] tracking-tight text-[#241812]">

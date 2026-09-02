@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Plus, ShieldCheck, QrCode, Phone, MapPin, AlertCircle, CheckCircle2, Heart, Sparkles, Upload } from 'lucide-react';
+import { X, Plus, ShieldCheck, QrCode, Phone, MapPin, AlertCircle, CheckCircle2, Heart, Sparkles, Upload, Trash2 } from 'lucide-react';
 import { Pet } from '../../types';
 import confetti from 'canvas-confetti';
 
@@ -11,6 +11,7 @@ interface PetProfileModalProps {
   selectedPetId: string;
   onSelectPet: (petId: string) => void;
   onSavePet: (pet: Pet) => void;
+  onRemovePet?: (petId: string) => void;
   onOpenQrTag: (pet: Pet) => void;
   onTriggerLostAlert: (pet: Pet) => void;
 }
@@ -22,10 +23,12 @@ export const PetProfileModal: React.FC<PetProfileModalProps> = ({
   selectedPetId,
   onSelectPet,
   onSavePet,
+  onRemovePet,
   onOpenQrTag,
   onTriggerLostAlert,
 }) => {
   const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [petToDelete, setPetToDelete] = useState<Pet | null>(null);
   const selectedPet = pets.find((p) => p.id === selectedPetId) || pets[0];
 
   // New Pet Form State
@@ -302,10 +305,25 @@ export const PetProfileModal: React.FC<PetProfileModalProps> = ({
                           </p>
                         </div>
 
-                        {/* Tag ID Badge */}
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FAF6F0] border border-[#E2D5C5] text-xs font-mono text-[#4E3D32]">
-                          <QrCode className="w-3.5 h-3.5 text-[#DE6828]" />
-                          <span>{selectedPet.qrTagId}</span>
+                        {/* Tag ID Badge & Remove Pet Button */}
+                        <div className="flex items-center gap-2">
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FAF6F0] border border-[#E2D5C5] text-xs font-mono text-[#4E3D32]">
+                            <QrCode className="w-3.5 h-3.5 text-[#DE6828]" />
+                            <span>{selectedPet.qrTagId}</span>
+                          </div>
+
+                          {onRemovePet && (
+                            <button
+                              id={`remove-pet-btn-${selectedPet.id}`}
+                              type="button"
+                              onClick={() => setPetToDelete(selectedPet)}
+                              title={`Remove ${selectedPet.name}'s profile`}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-red-200 bg-red-50/70 hover:bg-red-100 text-red-700 text-xs font-medium transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">Remove</span>
+                            </button>
+                          )}
                         </div>
                       </div>
 
@@ -381,6 +399,55 @@ export const PetProfileModal: React.FC<PetProfileModalProps> = ({
               )
             )}
           </div>
+
+          {/* Delete Confirmation Dialog */}
+          <AnimatePresence>
+            {petToDelete && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs rounded-3xl">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                  className="bg-white rounded-2xl p-6 max-w-sm w-full border border-[#EADBCC] shadow-xl text-center space-y-4"
+                >
+                  <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
+                    <Trash2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-serif font-bold text-[#241812]">
+                      Remove {petToDelete.name}?
+                    </h4>
+                    <p className="text-xs text-[#6B5A4E] mt-1.5 leading-relaxed">
+                      Are you sure you want to remove this trusted pet profile? This will delete their connected biometric safety profile and registered Smart QR Collar tag.
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      id="cancel-remove-pet-btn"
+                      onClick={() => setPetToDelete(null)}
+                      className="flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold text-[#4A3B31] bg-[#F2EAE0] hover:bg-[#E8DDD0] cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      id="confirm-remove-pet-btn"
+                      onClick={() => {
+                        if (onRemovePet) {
+                          onRemovePet(petToDelete.id);
+                        }
+                        setPetToDelete(null);
+                      }}
+                      className="flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold text-white bg-red-600 hover:bg-red-700 shadow-sm cursor-pointer"
+                    >
+                      Remove Pet
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </div>
     </AnimatePresence>

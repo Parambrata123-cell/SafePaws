@@ -28,13 +28,8 @@ import { initialPets, sampleAlerts, sampleSightings } from './data/mockData';
 import { Pet, NeighborhoodAlert, CommunitySighting } from './types';
 
 export default function App() {
-  const [hasEntered, setHasEntered] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('safepaws_has_entered') === 'true';
-    } catch {
-      return false;
-    }
-  });
+  // Always show the starting portal animation on every page refresh / load
+  const [hasEntered, setHasEntered] = useState<boolean>(false);
 
   const [pets, setPets] = useState<Pet[]>(() => {
     try {
@@ -114,14 +109,6 @@ export default function App() {
     }
   }, [sightings]);
 
-  useEffect(() => {
-    try {
-      if (hasEntered) {
-        localStorage.setItem('safepaws_has_entered', 'true');
-      }
-    } catch {}
-  }, [hasEntered]);
-
   // Modal Visibility States
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
@@ -150,6 +137,16 @@ export default function App() {
   const handleSavePet = (newPet: Pet) => {
     setPets((prev) => [newPet, ...prev]);
     setSelectedPetId(newPet.id);
+  };
+
+  const handleRemovePet = (petIdToRemove: string) => {
+    setPets((prev) => {
+      const remaining = prev.filter((p) => p.id !== petIdToRemove);
+      if (remaining.length > 0 && selectedPetId === petIdToRemove) {
+        setSelectedPetId(remaining[0].id);
+      }
+      return remaining;
+    });
   };
 
   const handleOpenQrForPet = (pet: Pet) => {
@@ -277,6 +274,7 @@ export default function App() {
         selectedPetId={selectedPetId}
         onSelectPet={(id) => setSelectedPetId(id)}
         onSavePet={handleSavePet}
+        onRemovePet={handleRemovePet}
         onOpenQrTag={handleOpenQrForPet}
         onTriggerLostAlert={handleTriggerLostAlertForPet}
       />
