@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { CustomCursor } from './components/CustomCursor';
 import { EnterScreen } from './components/EnterScreen';
@@ -28,11 +28,99 @@ import { initialPets, sampleAlerts, sampleSightings } from './data/mockData';
 import { Pet, NeighborhoodAlert, CommunitySighting } from './types';
 
 export default function App() {
-  const [hasEntered, setHasEntered] = useState(false);
-  const [pets, setPets] = useState<Pet[]>(initialPets);
-  const [selectedPetId, setSelectedPetId] = useState<string>('pet-olive');
-  const [alerts, setAlerts] = useState<NeighborhoodAlert[]>(sampleAlerts);
-  const [sightings, setSightings] = useState<CommunitySighting[]>(sampleSightings);
+  const [hasEntered, setHasEntered] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('safepaws_has_entered') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [pets, setPets] = useState<Pet[]>(() => {
+    try {
+      const saved = localStorage.getItem('safepaws_pets');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to parse saved pets from localStorage', e);
+    }
+    return initialPets;
+  });
+
+  const [selectedPetId, setSelectedPetId] = useState<string>(() => {
+    try {
+      const savedId = localStorage.getItem('safepaws_selected_pet_id');
+      if (savedId) return savedId;
+    } catch {}
+    return 'pet-olive';
+  });
+
+  const [alerts, setAlerts] = useState<NeighborhoodAlert[]>(() => {
+    try {
+      const saved = localStorage.getItem('safepaws_alerts');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to parse saved alerts from localStorage', e);
+    }
+    return sampleAlerts;
+  });
+
+  const [sightings, setSightings] = useState<CommunitySighting[]>(() => {
+    try {
+      const saved = localStorage.getItem('safepaws_sightings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to parse saved sightings from localStorage', e);
+    }
+    return sampleSightings;
+  });
+
+  // Keep localStorage in sync with state changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('safepaws_pets', JSON.stringify(pets));
+    } catch (e) {
+      console.error('Failed to save pets to localStorage', e);
+    }
+  }, [pets]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('safepaws_selected_pet_id', selectedPetId);
+    } catch {}
+  }, [selectedPetId]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('safepaws_alerts', JSON.stringify(alerts));
+    } catch (e) {
+      console.error('Failed to save alerts to localStorage', e);
+    }
+  }, [alerts]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('safepaws_sightings', JSON.stringify(sightings));
+    } catch (e) {
+      console.error('Failed to save sightings to localStorage', e);
+    }
+  }, [sightings]);
+
+  useEffect(() => {
+    try {
+      if (hasEntered) {
+        localStorage.setItem('safepaws_has_entered', 'true');
+      }
+    } catch {}
+  }, [hasEntered]);
 
   // Modal Visibility States
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -109,10 +197,19 @@ export default function App() {
     );
   };
 
+  const isAnyModalOpen =
+    isProfileModalOpen ||
+    isQrModalOpen ||
+    isLostAlertModalOpen ||
+    isBiometricModalOpen ||
+    isCommunityModalOpen ||
+    isHowItWorksOpen ||
+    infoModalType !== null;
+
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF6F0] text-[#241812] selection:bg-[#DE6828]/20 selection:text-[#B54C14]">
       {/* Clean Custom Cursor: inner dot follows immediately, outer circle lags smoothly with no blur */}
-      <CustomCursor />
+      <CustomCursor isModalOpen={isAnyModalOpen} />
 
       {/* Entry Screen Overlay */}
       <AnimatePresence>

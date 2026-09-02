@@ -12,14 +12,30 @@ interface PawStep {
   scale: number;
 }
 
-export const CustomCursor: React.FC = () => {
+interface ClickBurstPaw {
+  id: number;
+  startX: number;
+  startY: number;
+  targetX: number;
+  targetY: number;
+  rotation: number;
+  scale: number;
+}
+
+interface CustomCursorProps {
+  isModalOpen?: boolean;
+}
+
+export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [mode, setMode] = useState<CursorMode>('default');
   const [contextLabel, setContextLabel] = useState<string>('');
   const [isClicking, setIsClicking] = useState(false);
 
-  // Paw prints history
+  // Paw prints history (walking trail)
   const [pawSteps, setPawSteps] = useState<PawStep[]>([]);
+  // Jumping paw prints on click (burst)
+  const [clickBursts, setClickBursts] = useState<ClickBurstPaw[]>([]);
   const lastPawRef = useRef<{ x: number; y: number; time: number; stepCount: number }>({
     x: -999,
     y: -999,
@@ -36,17 +52,31 @@ export const CustomCursor: React.FC = () => {
   const smoothX = useSpring(mouseX, springConfig);
   const smoothY = useSpring(mouseY, springConfig);
 
-  // Clean up faded paw prints automatically
+  // Clear paw prints when a modal opens
+  useEffect(() => {
+    if (isModalOpen) {
+      setPawSteps([]);
+    }
+  }, [isModalOpen]);
+
+  // Clean up faded paw prints and click bursts automatically
   useEffect(() => {
     const timer = setInterval(() => {
       const now = Date.now();
       setPawSteps((prev) => {
         if (prev.length === 0) return prev;
-        // Keep steps created within the last 1200ms
-        const filtered = prev.filter((p) => now - p.id < 1200);
+        // Keep steps created within the last 650ms so old prints fade fast
+        const filtered = prev.filter((p) => now - p.id < 650);
         return filtered.length === prev.length ? prev : filtered;
       });
-    }, 120);
+
+      setClickBursts((prev) => {
+        if (prev.length === 0) return prev;
+        // Keep click bursts created within the last 700ms
+        const filtered = prev.filter((b) => now - b.id < 700);
+        return filtered.length === prev.length ? prev : filtered;
+      });
+    }, 50);
 
     return () => clearInterval(timer);
   }, []);
@@ -93,57 +123,74 @@ export const CustomCursor: React.FC = () => {
 
       // --- PAW-PRINT TRAIL LOGIC ---
       const last = lastPawRef.current;
-      const dx = curX - last.x;
-      const dy = curY - last.y;
-      const dist = Math.hypot(dx, dy);
 
-      // Spawn every ~36px of mouse travel only if on open background
-      const MIN_STRIDE = 36;
-      if (!isOverInteractiveOrContent && dist >= MIN_STRIDE && (now - last.time) > 40) {
-        // Calculate directional angle where upward toe pads face current movement vector
-        const movementAngleDeg = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
+      // First initialization of mouse position
+      if (last.x === -999) {
+        lastPawRef.current = { x: curX, y: curY, time: now, stepCount: 0 };
+      } else {
+        const dx = curX - last.x;
+        const dy = curY - last.y;
+        const dist = Math.hypot(dx, dy);
 
-        // Alternate slightly left and right footfalls perpendicular to movement heading for natural animal trot
-        const isRight = last.stepCount % 2 === 1;
-        const lateralOffset = 6;
-        const perpAngle = Math.atan2(dy, dx) + (isRight ? Math.PI / 2 : -Math.PI / 2);
-        const spawnX = curX - (dx / dist) * 18 + Math.cos(perpAngle) * lateralOffset;
-        const spawnY = curY - (dy / dist) * 18 + Math.sin(perpAngle) * lateralOffset;
+        // Stride distance between individual paw footprints
+        const STEP_DISTANCE = 32;
 
-        // Double check point target at spawn location so footprints don't encroach into buttons or text
-        const elemAtSpawn = document.elementFromPoint(spawnX, spawnY) as HTMLElement | null;
-        const isSpawnOverContent = isElementContentOrButton(elemAtSpawn);
+        if (dist >= STEP_DISTANCE) {
+          // When moving faster, dist can be much larger than STEP_DISTANCE (e.g. 80px-300px per mouse event).
+          // We calculate how many steps occurred along the travel path so fast movement produces
+          // a full, unbroken trail of paw prints instead of skipping or choking.
+          const numSteps = Math.min(Math.floor(dist / STEP_DISTANCE), 6);
+          const movementAngleDeg = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
 
-        if (!isSpawnOverContent) {
-          const newStep: PawStep = {
-            id: now,
-            x: spawnX,
-            y: spawnY,
-            angle: movementAngleDeg, // Fingers and toes face the exact movement direction
-            side: isRight ? 'right' : 'left',
-            scale: 0.95 + Math.random() * 0.1,
-          };
+          const newStepsToAdd: PawStep[] = [];
+          let currentStepCount = last.stepCount;
 
+          for (let i = 1; i <= numSteps; i++) {
+            const fraction = i / numSteps;
+            const interpX = last.x + dx * fraction;
+            const interpY = last.y + dy * fraction;
+
+            // Alternate left and right footfalls perpendicular to movement vector
+            const isRight = currentStepCount % 2 === 1;
+            const lateralOffset = 6;
+            const perpAngle = Math.atan2(dy, dx) + (isRight ? Math.PI / 2 : -Math.PI / 2);
+            const spawnX = interpX + Math.cos(perpAngle) * lateralOffset;
+            const spawnY = interpY + Math.sin(perpAngle) * lateralOffset;
+
+            currentStepCount++;
+
+            // Strict check: paw print must only spawn if on open background, never over buttons, content, or active modals
+            const elemAtSpawn = document.elementFromPoint(spawnX, spawnY) as HTMLElement | null;
+            const isSpawnOverContent = isModalOpen || isElementContentOrButton(elemAtSpawn);
+
+            if (!isSpawnOverContent) {
+              newStepsToAdd.push({
+                id: now + i, // Unique timestamp key
+                x: spawnX,
+                y: spawnY,
+                angle: movementAngleDeg, // Fingers and toes face the exact movement direction
+                side: isRight ? 'right' : 'left',
+                scale: 0.95 + Math.random() * 0.1,
+              });
+            }
+          }
+
+          // Advance reference to current mouse position
           lastPawRef.current = {
             x: curX,
             y: curY,
             time: now,
-            stepCount: last.stepCount + 1,
+            stepCount: currentStepCount,
           };
 
-          setPawSteps((prev) => {
-            const updated = [...prev, newStep];
-            return updated.length > 20 ? updated.slice(updated.length - 20) : updated;
-          });
+          if (newStepsToAdd.length > 0) {
+            setPawSteps((prev) => {
+              const updated = [...prev, ...newStepsToAdd];
+              // Keep up to 40 steps for a rich, continuous trail at any speed
+              return updated.length > 40 ? updated.slice(updated.length - 40) : updated;
+            });
+          }
         }
-      } else if (dist >= MIN_STRIDE) {
-        // Track coordinate even if over content so stepping resumes cleanly when moving back into background
-        lastPawRef.current = {
-          x: curX,
-          y: curY,
-          time: now,
-          stepCount: last.stepCount,
-        };
       }
 
       // --- CONTEXT-AWARE HOVER DETECTION ---
@@ -233,7 +280,41 @@ export const CustomCursor: React.FC = () => {
       setContextLabel('');
     };
 
-    const handleMouseDown = () => setIsClicking(true);
+    const handleMouseDown = (e: MouseEvent) => {
+      setIsClicking(true);
+
+      // Spawn jumping light orange paw prints bursting outwards from click point
+      const clickX = e.clientX;
+      const clickY = e.clientY;
+      const burstTimestamp = Date.now();
+
+      // Create 5 paws jumping out in different directions
+      const count = 5;
+      const baseAngles = [ -75, -25, 25, 75, 180 ]; // fan out and upwards
+      const newBursts: ClickBurstPaw[] = [];
+
+      for (let i = 0; i < count; i++) {
+        // distribute angles with slight organic variation
+        const angleDeg = baseAngles[i] + (Math.random() * 20 - 10);
+        const rad = (angleDeg * Math.PI) / 180;
+        // distance to jump out: 35px to 60px
+        const distance = 35 + Math.random() * 30;
+        const targetX = Math.cos(rad) * distance;
+        const targetY = Math.sin(rad) * distance;
+
+        newBursts.push({
+          id: burstTimestamp + i,
+          startX: clickX,
+          startY: clickY,
+          targetX,
+          targetY,
+          rotation: angleDeg + 90, // point paw forward in direction of jump
+          scale: 0.85 + Math.random() * 0.35,
+        });
+      }
+
+      setClickBursts((prev) => [...prev.slice(-15), ...newBursts]);
+    };
     const handleMouseUp = () => setIsClicking(false);
     const handleMouseLeave = () => setIsVisible(false);
     const handleMouseEnter = () => setIsVisible(true);
@@ -382,12 +463,12 @@ export const CustomCursor: React.FC = () => {
           {pawSteps.map((step) => (
             <motion.div
               key={step.id}
-              initial={{ opacity: 0, scale: 0.4 }}
-              animate={{ opacity: 0.62, scale: step.scale }}
-              exit={{ opacity: 0, scale: step.scale * 0.8 }}
+              initial={{ opacity: 0, scale: 0.75 }}
+              animate={{ opacity: 0.92, scale: step.scale }}
+              exit={{ opacity: 0, scale: step.scale * 0.95 }}
               transition={{
-                opacity: { duration: 1.1, ease: 'easeOut' },
-                scale: { duration: 0.22, ease: 'backOut' },
+                opacity: { duration: 0.35, ease: 'easeOut' },
+                scale: { duration: 0.08, ease: 'easeOut' },
               }}
               style={{
                 position: 'fixed',
@@ -397,15 +478,75 @@ export const CustomCursor: React.FC = () => {
                 y: '-50%',
                 rotate: step.angle,
               }}
-              className="pointer-events-none text-[#DE6828] origin-center"
+              className="pointer-events-none text-[#A83806] origin-center"
             >
               <svg
                 viewBox="0 0 24 24"
                 fill="currentColor"
-                className="w-4 h-4 text-[#DE6828]/70 drop-shadow-[0_1px_2px_rgba(222,104,40,0.15)]"
+                className="w-4.5 h-4.5 text-[#B03C08] drop-shadow-[0_1.5px_3px_rgba(168,56,6,0.35)]"
                 aria-hidden="true"
               >
                 {/* 4 toe pads pointing toward the top (front) of the SVG */}
+                <ellipse cx="6.5" cy="8" rx="1.8" ry="2.5" />
+                <ellipse cx="11" cy="5.5" rx="1.9" ry="2.7" />
+                <ellipse cx="15.5" cy="6" rx="1.8" ry="2.6" />
+                <ellipse cx="19" cy="9.5" rx="1.6" ry="2.2" />
+                {/* Main bottom pad */}
+                <path d="M12 11.5c-3 0-5.4 2-5.1 5 .2 2 2 3.7 5.1 3.7s4.9-1.7 5.1-3.7c.3-3-2.1-5-5.1-5z" />
+              </svg>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {/* 
+        ============================================================
+        CLICK BURST ANIMATION LAYER:
+        When clicking on anything, light orange paw prints jump out
+        in an energetic burst arc and gently fade away.
+        ============================================================
+      */}
+      <div className="pointer-events-none fixed inset-0 z-[99998] overflow-hidden select-none">
+        <AnimatePresence>
+          {clickBursts.map((burst) => (
+            <motion.div
+              key={burst.id}
+              initial={{
+                opacity: 0.95,
+                scale: 0.3,
+                x: 0,
+                y: 0,
+                rotate: burst.rotation - 15,
+              }}
+              animate={{
+                opacity: [0.95, 1, 0],
+                scale: [0.3, burst.scale * 1.15, burst.scale * 0.9],
+                x: burst.targetX,
+                y: [0, burst.targetY - 14, burst.targetY], // arc trajectory upwards then landing
+                rotate: [burst.rotation - 15, burst.rotation, burst.rotation + 10],
+              }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              transition={{
+                duration: 0.55,
+                ease: [0.22, 1, 0.36, 1], // snappy jump out with smooth deceleration
+                times: [0, 0.55, 1],
+              }}
+              style={{
+                position: 'fixed',
+                left: burst.startX,
+                top: burst.startY,
+                translateX: '-50%',
+                translateY: '-50%',
+              }}
+              className="pointer-events-none origin-center"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="w-5 h-5 text-[#FDBA74] drop-shadow-[0_2px_4px_rgba(249,115,22,0.4)]"
+                aria-hidden="true"
+              >
+                {/* 4 toe pads pointing toward top of paw */}
                 <ellipse cx="6.5" cy="8" rx="1.8" ry="2.5" />
                 <ellipse cx="11" cy="5.5" rx="1.9" ry="2.7" />
                 <ellipse cx="15.5" cy="6" rx="1.8" ry="2.6" />
