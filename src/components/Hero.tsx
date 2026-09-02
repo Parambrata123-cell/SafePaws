@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight, Check, Bell, ShieldCheck, QrCode } from 'lucide-react';
 import { PawIcon } from './Header';
@@ -14,6 +14,17 @@ export const Hero: React.FC<HeroProps> = ({
   onOpenOliveProfile,
   onOpenLostAlert,
 }) => {
+  const [spinCount, setSpinCount] = useState(0);
+  const [isCirculating, setIsCirculating] = useState(false);
+  const [clickRipple, setClickRipple] = useState(false);
+
+  const handleCenterCircularClick = () => {
+    setSpinCount((prev) => prev + 1);
+    setIsCirculating(true);
+    setClickRipple(true);
+    setTimeout(() => setClickRipple(false), 850);
+    setTimeout(() => setIsCirculating(false), 1050);
+  };
   return (
     <section className="relative w-full max-w-7xl mx-auto px-6 sm:px-10 lg:px-12 pt-8 pb-16 lg:pt-14 lg:pb-24">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
@@ -73,7 +84,12 @@ export const Hero: React.FC<HeroProps> = ({
 
         {/* Right Column: Orbital Radar & Floating Interactive Cards */}
         <div className="lg:col-span-6 flex justify-center items-center relative min-h-[380px] sm:min-h-[460px] lg:min-h-[500px]">
-          <div className="relative w-full max-w-[460px] aspect-square flex items-center justify-center">
+          <div
+            id="hero-circular-container"
+            data-no-paw-print="true"
+            data-circular-portion="true"
+            className="relative w-full max-w-[460px] aspect-square flex items-center justify-center select-none"
+          >
             
             {/* Outer Circular Ring 1 */}
             <div className="absolute inset-0 rounded-full border border-[#E9DCcb] pointer-events-none" />
@@ -85,29 +101,67 @@ export const Hero: React.FC<HeroProps> = ({
             <div className="absolute inset-[28%] rounded-full border border-[#E1CFB8] pointer-events-none" />
 
             {/* Subtle animated orbital scanning rings */}
-            <div className="absolute inset-[8%] rounded-full border border-[#E27031]/15 animate-spin-slow pointer-events-none">
+            <motion.div
+              animate={{
+                rotate: spinCount > 0 ? [(spinCount - 1) * 360, spinCount * 360 + 360] : undefined,
+              }}
+              transition={{ duration: 1.2, ease: [0.25, 1, 0.5, 1] }}
+              className="absolute inset-[8%] rounded-full border border-[#E27031]/15 animate-spin-slow pointer-events-none"
+            >
               {/* Little orbital dot marker */}
               <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-[#DE6828] shadow-[0_0_10px_rgba(222,104,40,0.6)]" />
-            </div>
+            </motion.div>
 
             {/* Counter-rotating subtle dashed ring with directional arrow */}
             <div className="absolute inset-[22%] rounded-full border border-dashed border-[#DE6828]/20 animate-spin-reverse-slow pointer-events-none">
               <div className="absolute bottom-1 right-[20%] w-2 h-2 rounded-full bg-[#E59360]" />
             </div>
 
-            {/* Central Glow Disc */}
-            <div className="relative w-[180px] sm:w-[210px] h-[180px] sm:h-[210px] rounded-full bg-gradient-to-br from-[#F5E2BE] via-[#F2DDB4] to-[#E9D1A2] shadow-[0_12px_32px_rgba(215,167,105,0.24)] flex items-center justify-center transition-transform hover:scale-105">
+            {/* Central Glow Disc - Circulates 360 degrees when clicked */}
+            <motion.div
+              id="hero-center-circular-disc"
+              data-no-paw-print="true"
+              data-circular-portion="true"
+              data-cursor="Spin"
+              onClick={handleCenterCircularClick}
+              animate={{
+                rotate: spinCount * 360,
+                scale: isCirculating ? [1, 1.08, 1] : 1,
+              }}
+              transition={{
+                duration: 1.05,
+                ease: [0.34, 1.3, 0.64, 1], // snappy start with smooth spring settling
+              }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Click to circulate"
+              className="relative w-[180px] sm:w-[210px] h-[180px] sm:h-[210px] rounded-full bg-gradient-to-br from-[#F5E2BE] via-[#F2DDB4] to-[#E9D1A2] shadow-[0_12px_32px_rgba(215,167,105,0.24)] flex items-center justify-center cursor-pointer transition-shadow hover:shadow-[0_16px_40px_rgba(215,167,105,0.36)] z-10 select-none"
+            >
               {/* Inner highlight circle */}
-              <div className="w-[140px] sm:w-[165px] h-[140px] sm:h-[165px] rounded-full bg-gradient-to-b from-[#F7E7C9] to-[#EBD3A7] flex items-center justify-center shadow-inner">
+              <div className="w-[140px] sm:w-[165px] h-[140px] sm:h-[165px] rounded-full bg-gradient-to-b from-[#F7E7C9] to-[#EBD3A7] flex items-center justify-center shadow-inner pointer-events-none">
                 {/* Solid Paw print matching the design */}
-                <div className="text-[#55321D] drop-shadow-sm">
+                <motion.div
+                  animate={{ rotate: isCirculating ? [0, -10, 10, 0] : 0 }}
+                  transition={{ duration: 0.75 }}
+                  className="text-[#55321D] drop-shadow-sm pointer-events-none"
+                >
                   <PawIcon className="w-16 h-16 sm:w-20 sm:h-20 text-[#54321D]" />
-                </div>
+                </motion.div>
               </div>
+
+              {/* Expanding ripple pulse when clicked */}
+              {clickRipple && (
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0.7 }}
+                  animate={{ scale: 2.1, opacity: 0 }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                  className="absolute inset-0 rounded-full border-2 border-[#DE6828]/45 pointer-events-none"
+                />
+              )}
 
               {/* Ambient gentle pulse around paw */}
               <div className="absolute inset-0 rounded-full bg-[#DE6828]/10 animate-pulse-ring pointer-events-none" />
-            </div>
+            </motion.div>
 
             {/* Floating Card 1: Top Right - Profile Protected (Olive · Golden retriever) */}
             <motion.div

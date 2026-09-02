@@ -52,6 +52,44 @@ export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false 
   const smoothX = useSpring(mouseX, springConfig);
   const smoothY = useSpring(mouseY, springConfig);
 
+  // Helper to check if a screen coordinate is inside the hero radar or central circular portions
+  const isPointInCircularPortion = (px: number, py: number): boolean => {
+    try {
+      // 1. Check DOM element at point
+      const el = document.elementFromPoint(px, py) as HTMLElement | null;
+      if (
+        el &&
+        el.closest(
+          '#hero-circular-container, [data-no-paw-print], #hero-center-circular-disc, [data-circular-portion]'
+        )
+      ) {
+        return true;
+      }
+
+      // 2. Geometric circle radius calculation (prevents pointer-events-none transparency leak)
+      const circularTargets = document.querySelectorAll(
+        '#hero-circular-container, [data-no-paw-print], #hero-center-circular-disc, [data-circular-portion]'
+      );
+      for (let i = 0; i < circularTargets.length; i++) {
+        const target = circularTargets[i];
+        const rect = target.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+          // Radius with a safe perimeter buffer
+          const radius = Math.max(rect.width, rect.height) / 2 + 10;
+          const distance = Math.hypot(px - centerX, py - centerY);
+          if (distance <= radius) {
+            return true;
+          }
+        }
+      }
+    } catch {
+      return false;
+    }
+    return false;
+  };
+
   // Clear paw prints when a modal opens
   useEffect(() => {
     if (isModalOpen) {
@@ -113,7 +151,8 @@ export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false 
           '[id*="-btn"], [id*="-card"], article, form, [role="dialog"], ' +
           'header, nav, footer, p, h1, h2, h3, h4, h5, h6, ' +
           'span, label, strong, em, b, i, img, svg, figure, ' +
-          '[data-cursor], [data-content], [data-enter-content]'
+          '[data-cursor], [data-content], [data-enter-content], ' +
+          '[data-no-paw-print], [data-circular-portion], #hero-circular-container, #hero-center-circular-disc'
         );
 
         return Boolean(matched);
@@ -159,9 +198,12 @@ export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false 
 
             currentStepCount++;
 
-            // Strict check: paw print must only spawn if on open background, never over buttons, content, or active modals
+            // Strict check: paw print must only spawn if on open background, never over buttons, content, circular portions, or active modals
             const elemAtSpawn = document.elementFromPoint(spawnX, spawnY) as HTMLElement | null;
-            const isSpawnOverContent = isModalOpen || isElementContentOrButton(elemAtSpawn);
+            const isSpawnOverContent =
+              isModalOpen ||
+              isElementContentOrButton(elemAtSpawn) ||
+              isPointInCircularPortion(spawnX, spawnY);
 
             if (!isSpawnOverContent) {
               newStepsToAdd.push({
@@ -205,6 +247,11 @@ export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false 
       if (cursorAttrEl) {
         const attrVal = cursorAttrEl.getAttribute('data-cursor');
         const customLabel = cursorAttrEl.getAttribute('data-cursor-label') || '';
+        if (attrVal === 'Spin') {
+          setMode('button');
+          setContextLabel('Spin');
+          return;
+        }
         if (attrVal === 'card') {
           setMode('card');
           setContextLabel(customLabel || 'View');
@@ -283,9 +330,15 @@ export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false 
     const handleMouseDown = (e: MouseEvent) => {
       setIsClicking(true);
 
-      // Spawn jumping light orange paw prints bursting outwards from click point
       const clickX = e.clientX;
       const clickY = e.clientY;
+
+      // Do NOT spawn click paw bursts over the circular portions or modals
+      if (isPointInCircularPortion(clickX, clickY) || isModalOpen) {
+        return;
+      }
+
+      // Spawn jumping light orange paw prints bursting outwards from click point
       const burstTimestamp = Date.now();
 
       // Create 5 paws jumping out in different directions
@@ -302,6 +355,11 @@ export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false 
         const targetX = Math.cos(rad) * distance;
         const targetY = Math.sin(rad) * distance;
 
+        // Skip any burst particle if its landing point is inside the circular portion
+        if (isPointInCircularPortion(clickX + targetX, clickY + targetY)) {
+          continue;
+        }
+
         newBursts.push({
           id: burstTimestamp + i,
           startX: clickX,
@@ -313,7 +371,9 @@ export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false 
         });
       }
 
-      setClickBursts((prev) => [...prev.slice(-15), ...newBursts]);
+      if (newBursts.length > 0) {
+        setClickBursts((prev) => [...prev.slice(-15), ...newBursts]);
+      }
     };
     const handleMouseUp = () => setIsClicking(false);
     const handleMouseLeave = () => setIsVisible(false);
@@ -460,7 +520,9 @@ export const CustomCursor: React.FC<CustomCursorProps> = ({ isModalOpen = false 
       */}
       <div className="pointer-events-none fixed inset-0 z-[105] overflow-hidden select-none">
         <AnimatePresence>
-          {pawSteps.map((step) => (
+          {pawSteps
+            .filter((step) => !isPointInCircularPortion(step.x, step.y))
+            .map((step) => (
             <motion.div
               key={step.id}
               initial={{ opacity: 0, scale: 0.75 }}
